@@ -15,8 +15,7 @@ executor = ThreadPoolExecutor(max_workers=4)
 limiter = Limiter(key_func=get_remote_address, default_limits=[])
 
 # ✅ Hugging Face AI microservice base URL (change to your actual deployed Space)
-HF_AI_URL = "https://gwen01-frams-ai.hf.space"
-
+HF_AI_URL = "https://meuorii-face-recognition-attendance.hf.space"
 
 # ---------------------------
 # Register Face (via Hugging Face)
