@@ -37,7 +37,6 @@ from routes.student_routes import student_bp
 from routes.instructor_routes import instructor_bp
 from routes.attendance_routes import attendance_bp
 from routes.face_routes import face_bp
-from routes.blink_routes import blink_bp
 from routes.admin_routes import admin_bp  # ✅ NEW: Admin routes
 
 # If you're using Flask-Limiter in face_routes, attach it here
@@ -52,7 +51,6 @@ app.register_blueprint(student_bp, url_prefix="/api/student")
 app.register_blueprint(instructor_bp, url_prefix="/api/instructor")
 app.register_blueprint(attendance_bp, url_prefix="/api/attendance")
 app.register_blueprint(face_bp, url_prefix="/api/face")
-app.register_blueprint(blink_bp, url_prefix="/api/blink")
 app.register_blueprint(admin_bp)  # ✅ no extra prefix to avoid '/api/api/admin'
 
 # --- Health & Root ---
