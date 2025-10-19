@@ -4,73 +4,93 @@ from flask_jwt_extended import JWTManager
 from dotenv import load_dotenv
 import os
 
-# --- Load environment variables ---
+# ----------------------------
+# Load Environment Variables
+# ----------------------------
 load_dotenv()
 
-# --- Flask app init ---
+# ----------------------------
+# Flask App Initialization
+# ----------------------------
 app = Flask(__name__)
 
-# ✅ CORS Configuration
+# ✅ Allow both local + deployed frontend domains
 CORS(
     app,
-    resources={r"/*": {"origins": ["http://localhost:5173"]}},  # allow your React frontend
+    resources={r"/*": {"origins": [
+        "http://localhost:5173",               # local React dev
+        "https://your-frontend-domain.com",    # replace with production frontend (if any)
+        "https://meuorii-face-recognition-attendance.hf.space"  # allow Hugging Face microservice
+    ]}},
     supports_credentials=True,
     expose_headers=["Content-Type", "Authorization"],
     allow_headers=["Content-Type", "Authorization"],
     methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"]
 )
 
-# --- Secrets / Config ---
+# ----------------------------
+# Flask Config / Secrets
+# ----------------------------
 app.config["SECRET_KEY"] = os.getenv("SECRET_KEY", "fallback-secret")
 app.config["JWT_SECRET_KEY"] = os.getenv("JWT_SECRET_KEY", "fallback-jwt-secret")
-app.config["JWT_ACCESS_TOKEN_EXPIRES"] = False  # you can set timedelta if desired
-
-# Ensure PyJWT in admin_routes.py sees the same secret by default
+app.config["JWT_ACCESS_TOKEN_EXPIRES"] = False
 os.environ.setdefault("JWT_SECRET", app.config["JWT_SECRET_KEY"])
 
-# --- JWT Manager ---
+# JWT Manager
 jwt = JWTManager(app)
 
-# --- Blueprints ---
+# ----------------------------
+# Import Blueprints
+# ----------------------------
 from routes.auth_routes import auth_bp
 from routes.student_routes import student_bp
 from routes.instructor_routes import instructor_bp
 from routes.attendance_routes import attendance_bp
 from routes.face_routes import face_bp
-from routes.admin_routes import admin_bp  # ✅ NEW: Admin routes
+from routes.admin_routes import admin_bp
 
-# If you're using Flask-Limiter in face_routes, attach it here
-try:
-    limiter.init_app(app)  # safe if limiter already bound
-except Exception:
-    pass
 
-# Register with prefixes (note: admin_bp already includes '/api/admin/...' in its routes)
+# Register all blueprints
 app.register_blueprint(auth_bp, url_prefix="/api/auth")
 app.register_blueprint(student_bp, url_prefix="/api/student")
 app.register_blueprint(instructor_bp, url_prefix="/api/instructor")
 app.register_blueprint(attendance_bp, url_prefix="/api/attendance")
 app.register_blueprint(face_bp, url_prefix="/api/face")
-app.register_blueprint(admin_bp)  # ✅ no extra prefix to avoid '/api/api/admin'
+app.register_blueprint(admin_bp)
 
-# --- Health & Root ---
+# ----------------------------
+# Health + Root Routes
+# ----------------------------
 @app.route("/")
 def home():
-    return "Face Recognition Attendance Backend is running..."
+    return jsonify({
+        "status": "ok",
+        "message": "🚀 Face Recognition Attendance Backend is running!",
+        "environment": os.getenv("RAILWAY_ENVIRONMENT", "development")
+    }), 200
+
 
 @app.route("/healthz")
 def healthz():
-    return jsonify(status="ok"), 200
+    return jsonify(status="healthy"), 200
 
-# --- Friendly error handlers (optional) ---
+
 @app.errorhandler(404)
 def not_found(_):
     return jsonify(error="Not found"), 404
+
 
 @app.errorhandler(500)
 def server_error(e):
     return jsonify(error="Server error", detail=str(e)), 500
 
-# --- Run ---
+
+# ----------------------------
+# Run App (For Railway)
+# ----------------------------
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=int(os.getenv("PORT", "5000")), debug=True)
+    port = int(os.getenv("PORT", 8080))  # ✅ Railway expects port 8080
+    app.run(host="0.0.0.0", port=port, debug=False)
+
+# ✅ Expose WSGI app for production (Gunicorn)
+application = app
